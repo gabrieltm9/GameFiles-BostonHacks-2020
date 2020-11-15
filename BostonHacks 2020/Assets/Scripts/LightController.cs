@@ -11,7 +11,7 @@ public class LightController : MonoBehaviour
     {
         if(defaultOn)
         {
-            gc.ChangePollutionVals(1, -2);
+            gc.ChangePollutionVals(1, -1);
             defaultOn = false;
         }
 

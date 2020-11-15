@@ -81,7 +81,7 @@ public class GameController : MonoBehaviour
 
         UpdateHouseData(housesParent.Find(fbm.user.UserId).GetComponent<HouseController>());
 
-        ud.totalScore += change;
+        ud.totalScore = Mathf.Clamp(ud.totalScore + change, 0, 30);
         UpdateUserScore(4, ud.totalScore);
 
         CalculateWorldScore();
@@ -247,7 +247,7 @@ public class GameController : MonoBehaviour
     {
         for(int i = 0; i < Mathf.Min(leaderboardTexts.Count, data.Count); i++)
         {
-            leaderboardTexts[i].text = i + ") " + data[i + 1].name + ": " + data[i].totalScore + "/30";
+            leaderboardTexts[i].text = i + 1 + ") " + data[i].name + ": " + data[i].totalScore + "/30";
         }
     }
 

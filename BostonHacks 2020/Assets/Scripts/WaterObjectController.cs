@@ -23,7 +23,7 @@ public class WaterObjectController : MonoBehaviour
 
     public void SetWaterOn()
     {
-        //transform.GetChild(0).GetComponent<ParticleSystem>().Play();
+        transform.GetChild(0).GetComponent<ParticleSystem>().Play();
         defaultOn = true;
     }
 }

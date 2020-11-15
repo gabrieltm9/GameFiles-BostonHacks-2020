@@ -30,7 +30,7 @@ public class PlayerController : MonoBehaviour
                 {
                     if(hit.transform.parent.parent.GetComponent<HouseController>().userDataID == gc.fbm.user.UserId)
                     {
-                        gc.ChangePollutionVals(3, -2);
+                        gc.ChangePollutionVals(3, -5);
                         hit.transform.gameObject.SetActive(false);
                     }
                 }
