@@ -30,6 +30,10 @@ public class GameController : MonoBehaviour
     public TMP_InputField emailInput;
     public TMP_InputField passwordInput;
 
+    //World
+    public GameObject housePrefab;
+    public Transform housesParent;
+    public Transform houseSpawnpointsParent;
 
     private void Update()
     {
@@ -77,11 +81,36 @@ public class GameController : MonoBehaviour
             if(userData.id == fbm.user.UserId)
                 currentUserDataIndex = data.Count - 1;
         }
+
+        //Update existing houses
+        for (int i = 0; i < housesParent.childCount; i++)
+        {
+            UpdateHouseData(housesParent.GetChild(i).GetComponent<HouseController>());
+        }
+
+        //Spawn new houses
+        while(housesParent.childCount < data.Count)
+        {
+            HouseController hc = SpawnHouse(housesParent.childCount).GetComponent<HouseController>();
+            hc.userDataID = data[housesParent.childCount - 1].id;
+            UpdateHouseData(hc);
+        }
+    }
+
+    void UpdateHouseData(HouseController hc)
+    {
+        UserData ud = data.Find(v => v.id == hc.userDataID);
+        //Update house stuff here
     }
 
     public void UpdateUserScore(int scoreType, int newScore) //Score types: 1 = energy, 2 = water, 3 = waste, 4 = total
     {
         spreadsheet.rows[fbm.user.UserId][scoreType + 2].UpdateCellValue(associatedSheet, associatedWorksheet, "" + newScore);
+    }
+
+    GameObject SpawnHouse(int spawnpointIndex)
+    {
+        return Instantiate(housePrefab, houseSpawnpointsParent.GetChild(spawnpointIndex).transform.position, houseSpawnpointsParent.GetChild(spawnpointIndex).transform.rotation, housesParent);
     }
 
     public void StartGame()
