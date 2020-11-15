@@ -4,10 +4,23 @@ using UnityEngine;
 
 public class LightController : MonoBehaviour
 {
+    public GameController gc;
     public bool defaultOn;
 
     public void ToggleLight()
     {
+        if(defaultOn)
+        {
+            gc.ChangePollutionVals(1, -1);
+            defaultOn = false;
+        }
 
+        transform.GetChild(0).GetComponent<Light>().enabled = !transform.GetChild(0).GetComponent<Light>().enabled;
+    }
+
+    public void SetLightOn()
+    {
+        transform.GetChild(0).GetComponent<Light>().enabled = true;
+        defaultOn = true;
     }
 }

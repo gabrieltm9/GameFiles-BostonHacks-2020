@@ -39,6 +39,8 @@ public class GameController : MonoBehaviour
 
     public NotificationManager pollutionNotif;
 
+    public Image fakeCursor;
+
     //World
     public GameObject housePrefab;
     public Transform housesParent;
@@ -47,6 +49,10 @@ public class GameController : MonoBehaviour
     public Transform indoorsParent;
     public Transform indoorsSpawnpoint;
 
+    public Transform interiorLightsParent;
+    public Transform interiorWaterObjectsParent;
+    public bool hasToggledInteriorProps;
+
     private void Update()
     {
         if(Input.GetKeyDown(KeyCode.X))
@@ -54,11 +60,35 @@ public class GameController : MonoBehaviour
             data[currentUserDataIndex].totalScore += 5;
             UpdateUserScore(4, data[currentUserDataIndex].totalScore);
         }
+    }
 
-        if (Input.GetKeyDown(KeyCode.N))
+    public void ChangePollutionVals(int type, int change) //Types: 1 = energy, 2 = water, 3 = waste (total gets calculated automatically)
+    {
+        UserData ud = data[currentUserDataIndex];
+
+        switch (type)
         {
-            RunPollutionNotif("Energy usage lowered!");
+            case 1:
+                ud.energyScore += change;
+                UpdateUserScore(type, ud.energyScore);
+                RunPollutionNotif("Energy usage lowered!");
+                break;
+            case 2:
+                ud.waterScore += change;
+                UpdateUserScore(type, ud.waterScore);
+                RunPollutionNotif("Water usage lowered!");
+                break;
+            case 3:
+                ud.wasteScore += change;
+                UpdateUserScore(type, ud.wasteScore);
+                RunPollutionNotif("Waste usage lowered!");
+                break;
         }
+
+        UpdateHouseData(housesParent.Find(fbm.user.UserId).GetComponent<HouseController>());
+
+        ud.totalScore += change;
+        UpdateUserScore(4, ud.totalScore);
     }
 
     public void RunPollutionNotif(string description = "", string title = "")
@@ -100,15 +130,46 @@ public class GameController : MonoBehaviour
             userData.id = ss.rows[i][0].value;
             userData.email = ss.rows[i][1].value;
             userData.name = ss.rows[i][2].value;
-            userData.energyScore = int.Parse(ss.rows[i][3].value);
-            userData.waterScore = int.Parse(ss.rows[i][4].value);
-            userData.wasteScore = int.Parse(ss.rows[i][5].value);
-            userData.totalScore = int.Parse(ss.rows[i][6].value);
+            int.TryParse(ss.rows[i][3].value, out userData.energyScore);
+            int.TryParse(ss.rows[i][4].value, out userData.waterScore);
+            int.TryParse(ss.rows[i][5].value, out userData.wasteScore);
+            int.TryParse(ss.rows[i][6].value, out userData.totalScore);
 
             data.Add(userData);
 
             if(userData.id == fbm.user.UserId)
+            {
                 currentUserDataIndex = data.Count - 1;
+
+                if(!hasToggledInteriorProps)
+                {
+                    //Lights
+                    List<int> childLightsActivated = new List<int>();
+                    for (int k = 0; k < userData.energyScore; k++)
+                    {
+                        int temp = Random.Range(0, interiorLightsParent.transform.childCount);
+                        if (!childLightsActivated.Contains(temp))
+                        {
+                            childLightsActivated.Add(temp);
+                            interiorLightsParent.GetChild(temp).GetComponent<LightController>().SetLightOn();
+                        }
+                    }
+
+                    //Water
+                    List<int> childWaterObjectsEnabled = new List<int>();
+                    for (int k = 0; k < Mathf.Min(interiorWaterObjectsParent.childCount, userData.waterScore); k++)
+                    {
+                        int temp = Random.Range(0, interiorWaterObjectsParent.transform.childCount);
+                        if (!childWaterObjectsEnabled.Contains(temp))
+                        {
+                            childWaterObjectsEnabled.Add(temp);
+                            interiorWaterObjectsParent.GetChild(temp).GetComponent<WaterObjectController>().SetWaterOn();
+                        }
+                    }
+
+                    hasToggledInteriorProps = true;
+                }
+            }
         }
 
         CalculateWorldScore();
@@ -179,8 +240,6 @@ public class GameController : MonoBehaviour
         if (gameStarted)
             return;
 
-        gameStarted = true;
-
         GetSpreadsheetData();
         StartCoroutine(GetSpreadsheetDataTimer());
 
@@ -189,6 +248,8 @@ public class GameController : MonoBehaviour
 
         player.SetActive(true);
         world.SetActive(true);
+
+        gameStarted = true;
     }
 
     public void GoIndoors()
@@ -204,6 +265,8 @@ public class GameController : MonoBehaviour
         player.transform.position = indoorsSpawnpoint.position;
         player.transform.localEulerAngles = new Vector3(0, 90, 0);
         fpc.m_MouseLook.m_CharacterTargetRot = player.transform.rotation;
+
+        fakeCursor.enabled = false;
 
         StartCoroutine(EnableFirstPersonController());
     }
@@ -222,6 +285,8 @@ public class GameController : MonoBehaviour
         player.transform.position = hc.exitSpawnpoint.position;
         player.transform.rotation = hc.exitSpawnpoint.rotation;
         fpc.m_MouseLook.m_CharacterTargetRot = player.transform.rotation;
+
+        fakeCursor.enabled = false;
 
         StartCoroutine(EnableFirstPersonController());
     }

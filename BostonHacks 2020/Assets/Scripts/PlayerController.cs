@@ -12,8 +12,13 @@ public class PlayerController : MonoBehaviour
     void Update()
     {
         ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        if (Physics.Raycast(ray, out hit, 2))
+        if (Physics.Raycast(ray, out hit, 3))
         {
+            if (hit.transform.tag == "EnterDoor" || hit.transform.tag == "ExitDoor" || hit.transform.GetComponent<LightController>() != null || hit.transform.GetComponent<WaterObjectController>() != null)
+                gc.fakeCursor.enabled = true;
+            else
+                gc.fakeCursor.enabled = false;
+
             if (Input.GetMouseButtonDown(0))
             {
                 //Door controls
@@ -21,8 +26,10 @@ public class PlayerController : MonoBehaviour
                     gc.GoIndoors();
                 else if (hit.transform.tag == "ExitDoor")
                     gc.GoOutdoors();
-                else if (hit.transform.tag == "Light")
+                else if (hit.transform.GetComponent<LightController>() != null)
                     hit.transform.GetComponent<LightController>().ToggleLight();
+                else if (hit.transform.GetComponent<WaterObjectController>() != null)
+                    hit.transform.GetComponent<WaterObjectController>().ToggleWater();
             }
         }
     }
