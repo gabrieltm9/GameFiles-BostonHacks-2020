@@ -42,6 +42,8 @@ public class GameController : MonoBehaviour
 
     public Image fakeCursor;
 
+    public GameObject pauseMenu;
+
     //World
     public GameObject housePrefab;
     public Transform housesParent;
@@ -55,6 +57,12 @@ public class GameController : MonoBehaviour
     public bool hasToggledInteriorProps;
 
     public List<TMP_Text> leaderboardTexts;
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
+            TogglePause();
+    }
 
     public void ChangePollutionVals(int type, int change) //Types: 1 = energy, 2 = water, 3 = waste (total gets calculated automatically)
     {
@@ -103,6 +111,28 @@ public class GameController : MonoBehaviour
     {
         Debug.Log("Getting spreadsheet data...");
         SpreadsheetManager.Read(new GSTU_Search(associatedSheet, associatedWorksheet), ReceiveData);
+    }
+        
+    void TogglePause()
+    {
+        pauseMenu.SetActive(!pauseMenu.activeSelf);
+        if(pauseMenu.activeSelf)
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = false;
+            player.GetComponent<FirstPersonController>().enabled = false;
+        }
+        else
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = true;
+            player.GetComponent<FirstPersonController>().enabled = true;
+        }
+    }
+
+    public void Quit()
+    {
+        Application.Quit();
     }
 
     IEnumerator GetSpreadsheetDataTimer()
