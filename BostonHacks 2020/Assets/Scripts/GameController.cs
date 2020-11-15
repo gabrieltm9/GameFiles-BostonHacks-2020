@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using UnityEngine.UI;
 
 public class GameController : MonoBehaviour
 {
@@ -20,10 +21,16 @@ public class GameController : MonoBehaviour
     public bool gameStarted;
     public bool refreshSpreadsheet = true;
 
+    public int maxScore = 30;
+
     //Data
     public GstuSpreadSheet spreadsheet;
     public List<UserData> data;
     public int currentUserDataIndex;
+
+    public int worldScore;
+    public int totalWorldScore;
+    public Slider worldScoreSlider;
 
     //UI
     public GameObject loginUI;
@@ -82,11 +89,11 @@ public class GameController : MonoBehaviour
                 currentUserDataIndex = data.Count - 1;
         }
 
+        CalculateWorldScore();
+
         //Update existing houses
         for (int i = 0; i < housesParent.childCount; i++)
-        {
             UpdateHouseData(housesParent.GetChild(i).GetComponent<HouseController>());
-        }
 
         //Spawn new houses
         while(housesParent.childCount < data.Count)
@@ -100,7 +107,38 @@ public class GameController : MonoBehaviour
     void UpdateHouseData(HouseController hc)
     {
         UserData ud = data.Find(v => v.id == hc.userDataID);
-        //Update house stuff here
+
+        hc.nameText.text = ud.name;
+        hc.scoreText.text = ud.totalScore + "/" + maxScore;
+
+        if (ud.waterScore > 8)
+            hc.waterLeak.Play();
+        else
+            hc.waterLeak.Stop();
+
+        if (ud.wasteScore > 5)
+            hc.smokeStack1.Play();
+        if (ud.wasteScore > 10)
+            hc.smokeStack2.Play();
+        if(ud.wasteScore < 5)
+        {
+            hc.smokeStack1.Stop();
+            hc.smokeStack2.Stop();
+        }
+
+        //if(ud.energyScore > 8)
+    }
+
+    void CalculateWorldScore()
+    {
+        worldScore = 0;
+        totalWorldScore = data.Count * maxScore;
+
+        foreach (UserData ud in data)
+            worldScore += ud.totalScore;
+
+        float temp = (float) worldScore / totalWorldScore;
+        worldScoreSlider.value = 1 - temp;
     }
 
     public void UpdateUserScore(int scoreType, int newScore) //Score types: 1 = energy, 2 = water, 3 = waste, 4 = total

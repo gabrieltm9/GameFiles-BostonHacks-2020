@@ -10,8 +10,8 @@ public class UserData
     public string email;
     public string name;
 
-    public int energyScore;
-    public int waterScore;
-    public int wasteScore;
-    public int totalScore;
+    public int energyScore = 0;
+    public int waterScore = 0;
+    public int wasteScore = 0;
+    public int totalScore = 0;
 }
