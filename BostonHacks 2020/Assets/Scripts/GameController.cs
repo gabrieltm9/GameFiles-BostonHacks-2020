@@ -6,6 +6,8 @@ using TMPro;
 using UnityEngine.UI;
 using UnityStandardAssets.Characters.FirstPerson;
 using Michsky.UI.ModernUIPack;
+using System.Linq;
+using System;
 
 public class GameController : MonoBehaviour
 {
@@ -25,8 +27,7 @@ public class GameController : MonoBehaviour
 
     //Data
     public GstuSpreadSheet spreadsheet;
-    public List<UserData> data;
-    public int currentUserDataIndex;
+    public List<UserData> data = new List<UserData>();
 
     public int worldScore;
     public int totalWorldScore;
@@ -53,33 +54,26 @@ public class GameController : MonoBehaviour
     public Transform interiorWaterObjectsParent;
     public bool hasToggledInteriorProps;
 
-    private void Update()
-    {
-        if(Input.GetKeyDown(KeyCode.X))
-        {
-            data[currentUserDataIndex].totalScore += 5;
-            UpdateUserScore(4, data[currentUserDataIndex].totalScore);
-        }
-    }
+    public List<TMP_Text> leaderboardTexts;
 
     public void ChangePollutionVals(int type, int change) //Types: 1 = energy, 2 = water, 3 = waste (total gets calculated automatically)
     {
-        UserData ud = data[currentUserDataIndex];
+        UserData ud = data.Find(v => v.id == fbm.user.UserId);
 
         switch (type)
         {
             case 1:
-                ud.energyScore += change;
+                ud.energyScore = Mathf.Clamp(ud.energyScore + change, 0, 10);
                 UpdateUserScore(type, ud.energyScore);
                 RunPollutionNotif("Energy usage lowered!", "Pollution Changed");
                 break;
             case 2:
-                ud.waterScore += change;
+                ud.waterScore = Mathf.Clamp(ud.waterScore + change, 0, 10);
                 UpdateUserScore(type, ud.waterScore);
                 RunPollutionNotif("Water usage lowered!", "Pollution Changed");
                 break;
             case 3:
-                ud.wasteScore += change;
+                ud.wasteScore = Mathf.Clamp(ud.wasteScore + change, 0, 10);
                 UpdateUserScore(type, ud.wasteScore);
                 RunPollutionNotif("Waste usage lowered!", "Pollution Changed");
                 break;
@@ -124,57 +118,65 @@ public class GameController : MonoBehaviour
     void ReceiveData(GstuSpreadSheet ss)
     {
         spreadsheet = ss;
-        data = new List<UserData>();
 
         for(int i = 2; i <= ss.rows.primaryDictionary.Count; i++)
         {
-            UserData userData = new UserData();
-            userData.id = ss.rows[i][0].value;
-            userData.email = ss.rows[i][1].value;
-            userData.name = ss.rows[i][2].value;
-            int.TryParse(ss.rows[i][3].value, out userData.energyScore);
-            int.TryParse(ss.rows[i][4].value, out userData.waterScore);
-            int.TryParse(ss.rows[i][5].value, out userData.wasteScore);
-            int.TryParse(ss.rows[i][6].value, out userData.totalScore);
-
-            data.Add(userData);
-
-            if(userData.id == fbm.user.UserId)
+            string id = ss.rows[i][0].value;
+            UserData dat = data.Find(v => v.id == id); 
+            if (dat != null)
             {
-                currentUserDataIndex = data.Count - 1;
+                dat.email = ss.rows[i][1].value;
+                dat.name = ss.rows[i][2].value;
+                int.TryParse(ss.rows[i][3].value, out dat.energyScore);
+                int.TryParse(ss.rows[i][4].value, out dat.waterScore);
+                int.TryParse(ss.rows[i][5].value, out dat.wasteScore);
+                int.TryParse(ss.rows[i][6].value, out dat.totalScore);
+            }
+            else
+            {
+                UserData userData = new UserData();
+                userData.id = id;
+                userData.email = ss.rows[i][1].value;
+                userData.name = ss.rows[i][2].value;
+                int.TryParse(ss.rows[i][3].value, out userData.energyScore);
+                int.TryParse(ss.rows[i][4].value, out userData.waterScore);
+                int.TryParse(ss.rows[i][5].value, out userData.wasteScore);
+                int.TryParse(ss.rows[i][6].value, out userData.totalScore);
 
-                if(!hasToggledInteriorProps)
+                data.Add(userData);
+
+                if (userData.id == fbm.user.UserId)
                 {
-                    //Lights
-                    List<int> childLightsActivated = new List<int>();
-                    for (int k = 0; k < userData.energyScore; k++)
+                    if (!hasToggledInteriorProps)
                     {
-                        int temp = Random.Range(0, interiorLightsParent.transform.childCount);
-                        if (!childLightsActivated.Contains(temp))
-                        {
-                            childLightsActivated.Add(temp);
-                            interiorLightsParent.GetChild(temp).GetComponent<LightController>().SetLightOn();
-                        }
+                        //Lights
+                        List<int> childLightIndexes = new List<int>();
+                        for (int j = 0; j < interiorLightsParent.transform.childCount; j++)
+                            childLightIndexes.Add(j);
+                        childLightIndexes = childLightIndexes.OrderBy(a => Guid.NewGuid()).ToList();
+
+                        for (int k = 0; k < userData.energyScore; k++)
+                            interiorLightsParent.GetChild(childLightIndexes[k]).GetComponent<LightController>().SetLightOn();
+
+                        //Water
+                        List<int> childWaterObjectIndexes = new List<int>();
+                        for (int j = 0; j < interiorWaterObjectsParent.transform.childCount; j++)
+                            childWaterObjectIndexes.Add(j);
+                        childWaterObjectIndexes = childWaterObjectIndexes.OrderBy(a => Guid.NewGuid()).ToList();
+
+                        for (int k = 0; k < Mathf.Min(5, userData.waterScore); k++)
+                            interiorWaterObjectsParent.GetChild(childWaterObjectIndexes[k]).GetComponent<WaterObjectController>().SetWaterOn();
+
+                        hasToggledInteriorProps = true;
+
+                        RunPollutionNotif("Welcome to Terra Nova " + data.Find(v => v.id == fbm.user.UserId).name, "Logged In");
                     }
-
-                    //Water
-                    List<int> childWaterObjectsEnabled = new List<int>();
-                    for (int k = 0; k < Mathf.Min(interiorWaterObjectsParent.childCount, userData.waterScore); k++)
-                    {
-                        int temp = Random.Range(0, interiorWaterObjectsParent.transform.childCount);
-                        if (!childWaterObjectsEnabled.Contains(temp))
-                        {
-                            childWaterObjectsEnabled.Add(temp);
-                            interiorWaterObjectsParent.GetChild(temp).GetComponent<WaterObjectController>().SetWaterOn();
-                        }
-                    }
-
-                    hasToggledInteriorProps = true;
-
-                    RunPollutionNotif("Welcome to Terra Nova " + data[currentUserDataIndex].name, "Logged In");
                 }
             }
         }
+
+        data = data.OrderBy(o => o.totalScore).ToList();
+        UpdateLeaderboards();
 
         CalculateWorldScore();
 
@@ -199,19 +201,31 @@ public class GameController : MonoBehaviour
         hc.nameText.text = ud.name;
         hc.scoreText.text = ud.totalScore + "/" + maxScore;
 
-        if (ud.waterScore > 8)
+        if (ud.waterScore >= 8)
             hc.waterLeak.Play();
         else
             hc.waterLeak.Stop();
 
-        if (ud.wasteScore > 5)
+        if (ud.wasteScore >= 5)
+        {
             hc.smokeStack1.Play();
-        if (ud.wasteScore > 10)
+            hc.garbageBags[0].SetActive(true);
+        }
+        if (ud.wasteScore >= 10)
+        {
             hc.smokeStack2.Play();
+            hc.garbageBags[1].SetActive(true);
+        }
+        if(ud.wasteScore == 15)
+            hc.garbageBags[2].SetActive(true);
         else if(ud.wasteScore < 5)
         {
             hc.smokeStack1.Stop();
             hc.smokeStack2.Stop();
+
+            hc.garbageBags[0].SetActive(false);
+            hc.garbageBags[1].SetActive(false);
+            hc.garbageBags[2].SetActive(false);
         }
 
         //if(ud.energyScore > 8)
@@ -227,6 +241,14 @@ public class GameController : MonoBehaviour
 
         float temp = (float) worldScore / totalWorldScore;
         worldScoreSlider.value = 1 - temp;
+    }
+
+    void UpdateLeaderboards()
+    {
+        for(int i = 0; i < Mathf.Min(leaderboardTexts.Count, data.Count); i++)
+        {
+            leaderboardTexts[i].text = i + ") " + data[i + 1].name + ": " + data[i].totalScore + "/30";
+        }
     }
 
     public void UpdateUserScore(int scoreType, int newScore) //Score types: 1 = energy, 2 = water, 3 = waste, 4 = total

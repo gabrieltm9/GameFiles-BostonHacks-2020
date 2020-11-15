@@ -13,6 +13,8 @@ public class HouseController : MonoBehaviour
     public ParticleSystem smokeStack1;
     public ParticleSystem smokeStack2;
 
+    public List<GameObject> garbageBags;
+
     public TMP_Text nameText;
     public TMP_Text scoreText;
 }

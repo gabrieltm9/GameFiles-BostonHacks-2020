@@ -11,7 +11,7 @@ public class WaterObjectController : MonoBehaviour
     {
         if (defaultOn)
         {
-            gc.ChangePollutionVals(2, -1);
+            gc.ChangePollutionVals(2, -3);
             defaultOn = false;
         }
 
@@ -23,7 +23,7 @@ public class WaterObjectController : MonoBehaviour
 
     public void SetWaterOn()
     {
-        transform.GetChild(0).GetComponent<ParticleSystem>().Play();
+        //transform.GetChild(0).GetComponent<ParticleSystem>().Play();
         defaultOn = true;
     }
 }
