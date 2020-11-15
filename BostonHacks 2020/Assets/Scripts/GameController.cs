@@ -71,17 +71,17 @@ public class GameController : MonoBehaviour
             case 1:
                 ud.energyScore += change;
                 UpdateUserScore(type, ud.energyScore);
-                RunPollutionNotif("Energy usage lowered!");
+                RunPollutionNotif("Energy usage lowered!", "Pollution Changed");
                 break;
             case 2:
                 ud.waterScore += change;
                 UpdateUserScore(type, ud.waterScore);
-                RunPollutionNotif("Water usage lowered!");
+                RunPollutionNotif("Water usage lowered!", "Pollution Changed");
                 break;
             case 3:
                 ud.wasteScore += change;
                 UpdateUserScore(type, ud.wasteScore);
-                RunPollutionNotif("Waste usage lowered!");
+                RunPollutionNotif("Waste usage lowered!", "Pollution Changed");
                 break;
         }
 
@@ -89,6 +89,8 @@ public class GameController : MonoBehaviour
 
         ud.totalScore += change;
         UpdateUserScore(4, ud.totalScore);
+
+        CalculateWorldScore();
     }
 
     public void RunPollutionNotif(string description = "", string title = "")
@@ -168,6 +170,8 @@ public class GameController : MonoBehaviour
                     }
 
                     hasToggledInteriorProps = true;
+
+                    RunPollutionNotif("Welcome to Terra Nova " + data[currentUserDataIndex].name, "Logged In");
                 }
             }
         }
@@ -204,7 +208,7 @@ public class GameController : MonoBehaviour
             hc.smokeStack1.Play();
         if (ud.wasteScore > 10)
             hc.smokeStack2.Play();
-        if(ud.wasteScore < 5)
+        else if(ud.wasteScore < 5)
         {
             hc.smokeStack1.Stop();
             hc.smokeStack2.Stop();
