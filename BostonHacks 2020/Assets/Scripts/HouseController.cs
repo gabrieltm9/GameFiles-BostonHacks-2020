@@ -7,6 +7,8 @@ public class HouseController : MonoBehaviour
 {
     public string userDataID;
 
+    public Transform exitSpawnpoint;
+
     public ParticleSystem waterLeak;
     public ParticleSystem smokeStack1;
     public ParticleSystem smokeStack2;

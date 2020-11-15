@@ -4,13 +4,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
+using UnityStandardAssets.Characters.FirstPerson;
+using Michsky.UI.ModernUIPack;
 
 public class GameController : MonoBehaviour
 {
-    [HideInInspector]
-    public string associatedSheet = "1r7oUGjUpapdhlDBwxJnwajmHPzfIwgjMKl4rvHHPgLc";
-    [HideInInspector]
-    public string associatedWorksheet = "Data";
+    public string associatedSheet = "1j3CFtSOcuSWDcjHorCrlwONceXIb1S8Efu1naGzJe3U";
+    public string associatedWorksheet = "Sheet1";
 
     public FirebaseManager fbm;
 
@@ -37,10 +37,15 @@ public class GameController : MonoBehaviour
     public TMP_InputField emailInput;
     public TMP_InputField passwordInput;
 
+    public NotificationManager pollutionNotif;
+
     //World
     public GameObject housePrefab;
     public Transform housesParent;
     public Transform houseSpawnpointsParent;
+
+    public Transform indoorsParent;
+    public Transform indoorsSpawnpoint;
 
     private void Update()
     {
@@ -49,6 +54,23 @@ public class GameController : MonoBehaviour
             data[currentUserDataIndex].totalScore += 5;
             UpdateUserScore(4, data[currentUserDataIndex].totalScore);
         }
+
+        if (Input.GetKeyDown(KeyCode.N))
+        {
+            RunPollutionNotif("Energy usage lowered!");
+        }
+    }
+
+    public void RunPollutionNotif(string description = "", string title = "")
+    {
+        if (description.Length > 0)
+            pollutionNotif.description = description;
+        if (title.Length > 0)
+            pollutionNotif.title = title;
+
+        pollutionNotif.UpdateUI();
+
+        pollutionNotif.OpenNotification();
     }
 
     void GetSpreadsheetData()
@@ -108,6 +130,7 @@ public class GameController : MonoBehaviour
     {
         UserData ud = data.Find(v => v.id == hc.userDataID);
 
+        hc.name = ud.id;
         hc.nameText.text = ud.name;
         hc.scoreText.text = ud.totalScore + "/" + maxScore;
 
@@ -166,5 +189,46 @@ public class GameController : MonoBehaviour
 
         player.SetActive(true);
         world.SetActive(true);
+    }
+
+    public void GoIndoors()
+    {
+        Debug.Log("Entering indoors...");
+
+        housesParent.gameObject.SetActive(false);
+        indoorsParent.gameObject.SetActive(true);
+
+        FirstPersonController fpc = player.GetComponent<FirstPersonController>();
+        fpc.enabled = false;
+
+        player.transform.position = indoorsSpawnpoint.position;
+        player.transform.localEulerAngles = new Vector3(0, 90, 0);
+        fpc.m_MouseLook.m_CharacterTargetRot = player.transform.rotation;
+
+        StartCoroutine(EnableFirstPersonController());
+    }
+
+    public void GoOutdoors()
+    {
+        Debug.Log("Entering outdoors...");
+
+        housesParent.gameObject.SetActive(true);
+        indoorsParent.gameObject.SetActive(false);
+
+        FirstPersonController fpc = player.GetComponent<FirstPersonController>();
+        fpc.enabled = false;
+
+        HouseController hc = housesParent.Find(fbm.user.UserId).GetComponent<HouseController>();
+        player.transform.position = hc.exitSpawnpoint.position;
+        player.transform.rotation = hc.exitSpawnpoint.rotation;
+        fpc.m_MouseLook.m_CharacterTargetRot = player.transform.rotation;
+
+        StartCoroutine(EnableFirstPersonController());
+    }
+
+    IEnumerator EnableFirstPersonController()
+    {
+        yield return new WaitForFixedUpdate();
+        player.GetComponent<FirstPersonController>().enabled = true;
     }
 }
