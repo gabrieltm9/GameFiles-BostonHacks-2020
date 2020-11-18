@@ -119,13 +119,13 @@ public class GameController : MonoBehaviour
         if(pauseMenu.activeSelf)
         {
             Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = false;
+            Cursor.visible = true;
             player.GetComponent<FirstPersonController>().enabled = false;
         }
         else
         {
             Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = true;
+            Cursor.visible = false;
             player.GetComponent<FirstPersonController>().enabled = true;
         }
     }
